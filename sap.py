@@ -4,6 +4,7 @@ from textual.binding import Binding
 from textual.widgets import Header, Footer, Static, Input, DataTable
 from textual.containers import ScrollableContainer, VerticalScroll
 from textual.command import Hit, Hits, Provider
+from textual import work
 
 # importing stuff to play the music
 from pygame import mixer
@@ -16,6 +17,10 @@ from functools import partial
 from keyboard import wait
 
 volume = 1
+q = []
+p = []
+isPaused=False
+is_running=True
 
 mixer.init()
 
@@ -25,6 +30,23 @@ ROWS = [
 for no, song in enumerate(listdir("songs"), start=1):
     ROWS.append(tuple([no, song]))
 
+"""def songplay():
+    global isPaused, v, q, is_running, p
+    while True:
+        if mixer.music.get_busy() == False and isPaused == False:
+            if len(q) != 0:
+                mixer.music.unload()
+                x = q.pop(0)
+                p.append(x)
+                mixer.music.load(x)
+                mixer.music.set_volume(v)
+                mixer.music.play()
+        if is_running == False:
+            quit()
+        sleep(2)
+
+songthread = Thread(target=songplay, args=())
+"""
 
 class songsProvider(Provider):
     async def search(self, query: str) -> Hits:
@@ -40,24 +62,20 @@ class songsProvider(Provider):
                     help=f"Plays {song[:-3:]}",
                     text="play {song}",
                 )
-
-
-class volumeProvider(Provider):
-    async def search(self, query: str) -> Hits:
-        matcher = self.matcher(query)
-        for new_volume in list(range(0, 101)):
-            score = matcher.match(f"volume set {new_volume}")
-            if score > 0:
+        
+        for song in listdir("songs")[:-1:]:
+            score=matcher.match(f"queue {song}")
+            if score>0:
                 yield Hit(
                     score,
                     matcher.highlight(query),
-                    partial(self.app.set_volume, new_volume),
-                    help=f"Sets the volume to {new_volume}",
+                    partial(self.app.queue_song,song),
+                    help=f"Queues {song[:-3:]}",
+                    text="queue {song}"
                 )
 
-
 class Sappy(App):
-    global volume
+    global volume, q, p
     COMMANDS = {songsProvider} | App.COMMANDS
 
     BINDINGS = [
@@ -65,24 +83,43 @@ class Sappy(App):
         Binding(key="d", action="toggle_dark", description="Toggle Dark mode"),
         Binding(key="down", action="decrease_volume", description="Decrease volume"),
         Binding(key="up", action="increase_volume", description="Increase volume"),
-        Binding(key="↑", action="increase_volume", description="Increase volume"),
-        Binding(key="↓", action="decrease_volume", description="Decrease volume"),
+        Binding(key="↑".lower(), action="increase_volume", description="Increase volume"),
+        Binding(key="↓".lower(), action="decrease_volume", description="Decrease volume"),
     ]
+    @work(exclusive=True, thread=True)
+    async def songplay(self)->None:
+        global isPaused, volume, q, is_running, p
+        while True:
+            if mixer.music.get_busy() == False and isPaused == False:
+                if len(q) != 0:
+                    mixer.music.unload()
+                    x = q.pop(0)
+                    p.append(x)
+                    mixer.music.load(x)
+                    mixer.music.set_volume(volume)
+                    mixer.music.play()
+            if is_running == False:
+                quit()
+            sleep(2)
+
+    #songthread = Thread(target=songplay, args=())
 
     def on_mount(self) -> None:
         table = self.query_one(DataTable)
         table.add_columns(*ROWS[0])
         table.add_rows(ROWS[1:])
+        self.songplay()
 
     def play_song(self, song: str) -> None:
+        q.clear()
         mixer.music.set_volume(volume)
         mixer.music.unload()
         mixer.music.load("./songs/" + song)
         mixer.music.play()
-
-    def set_volume(self, new_volume: float) -> None:
-        volume = new_volume / 100
+    
+    def queue_song(self, song:str)->None:
         mixer.music.set_volume(volume)
+        q.append("./songs/"+song)
 
     def action_increase_volume(self) -> None:
         volume = mixer.music.get_volume()
