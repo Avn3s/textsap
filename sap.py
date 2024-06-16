@@ -19,8 +19,9 @@ from keyboard import wait
 volume = 1
 q = []
 p = []
-isPaused=False
+is_paused=False
 is_running=True
+
 
 mixer.init()
 
@@ -73,9 +74,10 @@ class songsProvider(Provider):
                     help=f"Queues {song[:-3:]}",
                     text="queue {song}"
                 )
+        
 
 class Sappy(App):
-    global volume, q, p
+    global volume, q, p, is_paused
     COMMANDS = {songsProvider} | App.COMMANDS
 
     BINDINGS = [
@@ -85,12 +87,15 @@ class Sappy(App):
         Binding(key="up", action="increase_volume", description="Increase volume"),
         Binding(key="↑".lower(), action="increase_volume", description="Increase volume"),
         Binding(key="↓".lower(), action="decrease_volume", description="Decrease volume"),
+        Binding(key="space", action="toggle_pause", description="Pause/Resume"),
+        Binding(key="n", action="next", description="Next song"),
+        Binding(key="p",action="prev",description="Previous song"),
     ]
     @work(exclusive=True, thread=True)
     async def songplay(self)->None:
         global isPaused, volume, q, is_running, p
         while True:
-            if mixer.music.get_busy() == False and isPaused == False:
+            if mixer.music.get_busy() == False and is_paused == False:
                 if len(q) != 0:
                     mixer.music.unload()
                     x = q.pop(0)
@@ -127,9 +132,29 @@ class Sappy(App):
         mixer.music.set_volume(volume)
 
     def action_decrease_volume(self) -> None:
+        global volume
         volume = mixer.music.get_volume()
         volume -= 0.05
         mixer.music.set_volume(volume)
+
+    def action_toggle_pause(self)->None:
+        global is_paused
+        if is_paused:
+            mixer.music.unpause()
+        else:
+            mixer.music.pause()
+        is_paused=not is_paused
+    
+    def action_next(self)->None:
+        mixer.music.stop()
+        mixer.music.unload()
+    
+    def action_prev(self)->None:
+        global q,p
+        q.insert(0, p.pop())
+        q.insert(0, p.pop())
+        mixer.music.stop()
+        mixer.music.unload()
 
     def action_toggle_dark(self) -> None:
         self.dark = not self.dark
