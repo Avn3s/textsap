@@ -88,8 +88,8 @@ class Sappy(App):
         Binding(key="↑".lower(), action="increase_volume", description="Increase volume"),
         Binding(key="↓".lower(), action="decrease_volume", description="Decrease volume"),
         Binding(key="space", action="toggle_pause", description="Pause/Resume"),
-        Binding(key="n", action="next", description="Next song"),
-        Binding(key="p",action="prev",description="Previous song"),
+        Binding(key=">", action="next", description="Next song"),
+        Binding(key="<",action="prev",description="Previous song"),
     ]
     @work(exclusive=True, thread=True)
     async def songplay(self)->None:
@@ -103,11 +103,10 @@ class Sappy(App):
                     mixer.music.load(x)
                     mixer.music.set_volume(volume)
                     mixer.music.play()
+                    self.notify(title="Now Playing",message=x[8:-4:])
             if is_running == False:
                 quit()
             sleep(2)
-
-    #songthread = Thread(target=songplay, args=())
 
     def on_mount(self) -> None:
         table = self.query_one(DataTable)
