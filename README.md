@@ -22,7 +22,7 @@ Coming soon...
 ## Installation
 
 First Install the dependencies using:
-```
+```bash
 pip install textual
 pip install pygame
 ```
