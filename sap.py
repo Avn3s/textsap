@@ -95,7 +95,7 @@ class Sappy(App):
     async def songplay(self)->None:
         global isPaused, volume, q, is_running, p
         while True:
-            if mixer.music.get_busy() == False and is_paused == False:
+            if not mixer.music.get_busy() and not is_paused:
                 if len(q) != 0:
                     mixer.music.unload()
                     x = q.pop(0)
@@ -104,7 +104,7 @@ class Sappy(App):
                     mixer.music.set_volume(volume)
                     mixer.music.play()
                     self.notify(title="Now Playing",message=x[8:-4:])
-            if is_running == False:
+            if not is_running:
                 quit()
             sleep(2)
 
@@ -120,10 +120,12 @@ class Sappy(App):
         mixer.music.unload()
         mixer.music.load("./songs/" + song)
         mixer.music.play()
+        self.notify(title="Now Playing",message=song[:-4:])
     
     def queue_song(self, song:str)->None:
         mixer.music.set_volume(volume)
         q.append("./songs/"+song)
+        self.notify(title="Added to queue",message=song[:-4:],severity="warning")
 
     def action_increase_volume(self) -> None:
         volume = mixer.music.get_volume()
