@@ -24,17 +24,24 @@ Coming soon...
 
 ## Installation
 
-First Install the dependencies using:
+Make sure python (version 3.10 or above) and pip are installed first.
+
+Install the dependencies using:
 ```bash
 pip install textual
 pip install pygame
 ```
 
-Clone this repository using
+Then clone this repository using
 
 ```git
 git clone https://github.com/Avn3s/textsap.git
+```
+
+Then run the program
+```bash
 cd textsap
+python sap.py
 ```
 
     
@@ -42,7 +49,7 @@ cd textsap
 
 Literally nobody.
 
-## 🔗 Contact Me
+## Contact Me
 <p align="center">
 <a href="https://discordapp.com/users/1195015190807326853"><img src="https://static.vecteezy.com/system/resources/previews/023/986/998/large_2x/discord-logo-discord-logo-transparent-discord-icon-transparent-free-free-png.png" width="80" height="80"></img></a>
 <a href="mailto:astarcys7@proton.me"><img src="https://www.dockhunt.com/_next/image?url=https%3A%2F%2Fdockhunt-images.nyc3.cdn.digitaloceanspaces.com%2Fd7519e4c-6f21-4206-9b4a-c8b731034abc&w=256&q=75" width="80" height="80"></img></a>
