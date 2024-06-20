@@ -214,12 +214,12 @@ class Sappy(App):
     
     def action_rewind(self)->None:
         position=mixer.music.get_pos()
-        mixer.music.set_pos(position/1000-5)
+        mixer.music.set_pos((position-5000)/1000)
         del position
     
     def action_forward(self)->None:
         position=mixer.music.get_pos()
-        mixer.music.set_pos(position/1000+5)
+        mixer.music.set_pos((position+5000)/1000)
         del position
     
     def action_next(self)->None:
