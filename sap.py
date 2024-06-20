@@ -122,13 +122,23 @@ class HelpScreen(ModalScreen[None]):
         with Container(id="volume_slider"):
             yield ProgressBar(total=100, show_eta=False, show_percentage=True)"""
 class Control(Static):
+    DEFAULT_CSS="""
+    Control{
+        layout: horizontal;
+        align: center bottom;
+    }
+    """
     def compose(self) -> ComposeResult:
         yield Button("󰙣")
         yield Button("")
         yield Button("󰙡")
-        yield ProgressBar(total=100)
         
 class Sappy(App):
+    DEFAULT_CSS="""
+    Control{
+        align: center bottom;
+    }
+    """
     global volume, q, p, is_paused
     COMMANDS = {songsProvider} | App.COMMANDS
 
@@ -143,6 +153,9 @@ class Sappy(App):
         Binding(key=">", action="next", description="Next song"),
         Binding(key="<",action="prev",description="Previous song"),
         Binding(key="h", action="help", description="Help"),
+        Binding(key="left", action="rewind", description="rewind"),
+        Binding(key="right", action="forward", description="forward"),
+
     ]
     @work(exclusive=True, thread=True)
     async def songplay(self)->None:
@@ -198,6 +211,16 @@ class Sappy(App):
         else:
             mixer.music.pause()
         is_paused=not is_paused
+    
+    def action_rewind(self)->None:
+        position=mixer.music.get_pos()
+        mixer.music.set_pos(position/1000-5)
+        del position
+    
+    def action_forward(self)->None:
+        position=mixer.music.get_pos()
+        mixer.music.set_pos(position/1000+5)
+        del position
     
     def action_next(self)->None:
         mixer.music.stop()
