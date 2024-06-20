@@ -1,8 +1,10 @@
 # importing ui
 from textual.app import App, ComposeResult
+from textual.screen import ModalScreen
+from textual.containers import ScrollableContainer
 from textual.binding import Binding
-from textual.widgets import Header, Footer, Static, Input, DataTable
-from textual.containers import ScrollableContainer, VerticalScroll
+from textual.widgets import Header, Footer, Static, Label, DataTable, ProgressBar, Button
+from textual.containers import Container, VerticalScroll
 from textual.command import Hit, Hits, Provider
 from textual import work
 
@@ -75,7 +77,57 @@ class songsProvider(Provider):
                     text="queue {song}"
                 )
         
+class HelpScreen(ModalScreen[None]):
+    BINDINGS=[
+        Binding(key="escape", action="pop_screen")
+    ]
+    
+    DEFAULT_CSS="""
+    HelpScreen{
+        align: center middle;
 
+        }
+    #help{
+        width: auto;
+        max-width: 80%;
+        height: auto;
+        max-height: 40%;
+        background: $panel;
+        align: center middle;
+        padding: 2 4;
+    }
+    """
+    
+    def compose(self)->ComposeResult:
+        with  Container(id="help"):
+            yield Label("Showing help")
+
+"""class VolumeScreen(ModalScreen[None]):
+    DEFAULT_CSS='''
+    VolumeScreen{
+        align: center middle;
+
+        }
+    #volume_slider{
+        width: auto;
+        max-width: 80%;
+        height: auto;
+        max-height: 10%;
+        background: $panel;
+        align: center down;
+        padding: 2 4;
+    }
+    '''
+    def compose(self)->ComposeResult:
+        with Container(id="volume_slider"):
+            yield ProgressBar(total=100, show_eta=False, show_percentage=True)"""
+class Control(Static):
+    def compose(self) -> ComposeResult:
+        yield Button("󰙣")
+        yield Button("")
+        yield Button("󰙡")
+        yield ProgressBar(total=100)
+        
 class Sappy(App):
     global volume, q, p, is_paused
     COMMANDS = {songsProvider} | App.COMMANDS
@@ -90,6 +142,7 @@ class Sappy(App):
         Binding(key="space", action="toggle_pause", description="Pause/Resume"),
         Binding(key=">", action="next", description="Next song"),
         Binding(key="<",action="prev",description="Previous song"),
+        Binding(key="h", action="help", description="Help"),
     ]
     @work(exclusive=True, thread=True)
     async def songplay(self)->None:
@@ -156,6 +209,9 @@ class Sappy(App):
         q.insert(0, p.pop())
         mixer.music.stop()
         mixer.music.unload()
+    
+    def action_help(self)->None:
+        self.push_screen(HelpScreen())
 
     def action_toggle_dark(self) -> None:
         self.dark = not self.dark
@@ -169,6 +225,7 @@ class Sappy(App):
         )
         yield Footer()
         yield DataTable(show_cursor=False)
+        yield Control()
 
 
 app = Sappy()
