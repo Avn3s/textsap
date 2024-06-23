@@ -164,9 +164,9 @@ class Status(Static):
 
     def compose(self) -> ComposeResult:
         global song
-        song_copy = MP3(song)
-        length = song_copy.info.length
-        yield ProgressBar(total=length, show_percentage=False, id="bar")
+        
+        length = MP3(song).info.length if mixer.music.get_busy() or is_paused else 300
+        yield ProgressBar(total=length, show_percentage=False, id="bar",)                
 
 
 class Sappy(App):
