@@ -11,7 +11,8 @@ from textual.widgets import (
     DataTable,
     ProgressBar,
     Button,
-    Markdown,
+    MarkdownViewer,
+    Markdown
 )
 from textual.containers import Container, VerticalScroll
 from textual.command import Hit, Hits, Provider
@@ -37,6 +38,34 @@ is_change = False
 song = ""
 
 mixer.init()
+song_list="""\
+## Installed Songs
+
+| No. | Name | Path |
+|-----|------|------|
+"""
+songs=listdir("songs")
+
+for no, song in enumerate(songs, start=1):
+    if song!="◌󠇯.txt":
+        song_list+=f"|{no}|{song}|bob|\n"
+
+help_text="""\
+
+## Help Screen
+| Command | Description |
+|---------|-------------|
+| Q | Quit the app |
+| D | Toggle Dark / Light mode |
+| ↑ | Increase Volume |
+| ↓ | Decrease Volume |
+| ← | Rewind by 10 seconds |
+| → | Fast forward by 10 seconds |
+| > | Skip the current song and play the next song in the queue |
+| < | Play the previous song in the queue |
+| esc |Close this help screen |
+
+"""
 
 ROWS = [
     ("No.", "Song"),
@@ -70,6 +99,15 @@ class songsProvider(Provider):
                     help=f"Queues {song[:-3:]}",
                     text="queue {song}",
                 )
+        help_score=matcher.match("help")
+        if help_score>0:
+            yield Hit(
+                help_score,
+                matcher.highlight(query),
+                partial(self.app.action_help),
+                help="Shows help regarding commands and keybinds",
+                text="Shows help regarding commands and keybinds",
+            )
 
 
 class HelpScreen(ModalScreen[None]):
@@ -82,75 +120,23 @@ class HelpScreen(ModalScreen[None]):
         }
     #help{
         width: auto;
-        max-width: 90%;
+        max-width: 70%;
         height: auto;
-        max-height: 60%;
+        max-height: 80%;
         background: $panel;
         align: center middle;
         padding: 2 4;
     }
+    
+    .songlist{
+        align: left middle;
+    }
     """
 
     def compose(self) -> ComposeResult:
+        global help_text
         with Container(id="help"):
-            """yield Label("Showing help")
-            ROWS=[
-                ("Keybind","Action")
-            ]
-            binds={
-                "Q":"Quit the app",
-                "D":"Toggle Dark/Light mode",
-                "↑":"Increase Volume",
-                "↓":"Decrease Volume",
-                "←":"Rewind by 10 seconds",
-                "→":"Fast forward by 10 seconds",
-                ">":"Skip the current song and play the next song in the queue",
-                "<":"Play the previous song in the queue",
-                "esc":"Close this help screen",
-                }
-            for i in binds:
-                ROWS.append(tuple([i,binds[i]]))
-            table=self.query_one(DataTable())
-            table.add_columns(*ROWS[0])
-            table.add_rows(ROWS[1:])
-            yield DataTable(show_cursor=False)"""
-            yield Markdown(markdown="Showing Help")
-
-
-"""class VolumeScreen(ModalScreen[None]):
-    DEFAULT_CSS='''
-    VolumeScreen{
-        align: center middle;
-
-        }
-    #volume_slider{
-        width: auto;
-        max-width: 80%;
-        height: auto;
-        max-height: 10%;
-        background: $panel;
-        align: center down;
-        padding: 2 4;
-    }
-    '''
-    def compose(self)->ComposeResult:
-        with Container(id="volume_slider"):
-            yield ProgressBar(total=100, show_eta=False, show_percentage=True)"""
-
-
-class Control(Static):
-    DEFAULT_CSS = """
-    Control{
-        layout: horizontal;
-        align: center bottom;
-        content-align: center bottom;
-    }
-    """
-
-    def compose(self) -> ComposeResult:
-        yield Button("󰙣")
-        yield Button("")
-        yield Button("󰙡")
+            yield MarkdownViewer(markdown=help_text, show_table_of_contents=False)
 
 
 class Status(Static):
@@ -163,14 +149,14 @@ class Status(Static):
     """
 
     def compose(self) -> ComposeResult:
-        global song
+        global song, length
         
         length = MP3(song).info.length if mixer.music.get_busy() or is_paused else 300
-        yield ProgressBar(total=length, show_percentage=False, id="bar",)                
+        yield ProgressBar(total=length, show_percentage=False, id="bar",)              
 
 
 class Sappy(App):
-    global volume, q, p, is_paused, song
+    global volume, q, p, is_paused, song, length
     COMMANDS = {songsProvider} | App.COMMANDS
     DEFAULT_CSS = """
     Control{
@@ -215,15 +201,9 @@ class Sappy(App):
             if not is_running:
                 quit()
             sleep(2)
-
-    @work(exclusive=True, thread=True)
-    async def status(self) -> None:
-        global is_paused, is_change, is_running, song
-
+        
+    
     def on_mount(self) -> None:
-        table = self.query_one(DataTable)
-        table.add_columns(*ROWS[0])
-        table.add_rows(ROWS[1:])
         self.songplay()
 
     def play_song(self, song: str) -> None:
@@ -294,9 +274,9 @@ class Sappy(App):
             show_clock=True,
         )
         yield Footer()
-        yield DataTable(show_cursor=False)
-        yield Control()
-        yield Status()
+        yield MarkdownViewer(song_list, show_table_of_contents=False, classes='songlist')
+#        yield Control()
+#        yield Status()
 
 
 app = Sappy()
