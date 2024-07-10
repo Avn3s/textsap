@@ -14,7 +14,7 @@ from textual.widgets import (
     MarkdownViewer,
     Markdown
 )
-from textual.containers import Container, VerticalScroll
+from textual.containers import Container, Vertical, Horizontal
 from textual.command import Hit, Hits, Provider
 from textual import work
 from mutagen.mp3 import MP3
@@ -50,11 +50,14 @@ for no, song in enumerate(songs, start=1):
     if song!="◌󠇯.txt":
         song_list+=f"|{no}|{song}|bob|\n"
 
-help_text="""\
+help_text="""
 
-## Help Screen
-| Command | Description |
+# Help Screen
+
+## Keybinds
+| Keybind | Description |
 |---------|-------------|
+| Ctrl+\ | Open the command prompt |
 | Q | Quit the app |
 | D | Toggle Dark / Light mode |
 | ↑ | Increase Volume |
@@ -65,7 +68,22 @@ help_text="""\
 | < | Play the previous song in the queue |
 | esc |Close this help screen |
 
+## Commands
+| Command | Description |
+|---------|-------------|
+| queue {song} | Adds {song} to the queue |
+| play {song} | Plays {song}, but removes items in the queue, if any |
+| pause | Pauses the current song |
+| resume | Resumes the current song |
+| help | Opens this help screen|
+
+Check out the [GitHub](https://github.com/Avn3s/textsap) for more information.
+
+Gimme a ⭐ if you like it plz uwuwu <3 (@_@)<-Cute pleading face.
+Enjoy.
 """
+
+
 
 ROWS = [
     ("No.", "Song"),
@@ -108,7 +126,41 @@ class songsProvider(Provider):
                 help="Shows help regarding commands and keybinds",
                 text="Shows help regarding commands and keybinds",
             )
+        pause_score=matcher.match("pause")
+        if pause_score>0:
+            yield Hit(
+                pause_score,
+                matcher.highlight(query),
+                partial(self.app.action_toggle_pause),
+                help="Pauses the current song.",
+                text="Pauses the current song.",
+            )
+        resume_score=matcher.match("resume")
+        if resume_score>0:
+            yield Hit(
+                resume_score,
+                matcher.highlight(query),
+                partial(self.app.action_toggle_pause),
+                help="Resumes the current song.",
+                text="Resumes the current song.",
+            )
 
+class Volumebar(Static):
+    DEFAULT_CSS="""
+    
+    Volumebar {
+        width: 30%;
+        height: 100%;
+        background: $panel;
+        padding: 1 1;
+        align: center top;
+    }
+    
+    """
+    
+    def compose(self)->ComposeResult:
+        yield Markdown()#start here
+        
 
 class HelpScreen(ModalScreen[None]):
     BINDINGS = [Binding(key="escape", action="pop_screen")]
@@ -117,7 +169,7 @@ class HelpScreen(ModalScreen[None]):
     HelpScreen{
         align: center middle;
 
-        }
+    }
     #help{
         width: auto;
         max-width: 70%;
@@ -126,45 +178,19 @@ class HelpScreen(ModalScreen[None]):
         background: $panel;
         align: center middle;
         padding: 2 4;
+        border: solid blue;
     }
     
-    .songlist{
-        align: left middle;
-    }
     """
 
     def compose(self) -> ComposeResult:
         global help_text
         with Container(id="help"):
-            yield MarkdownViewer(markdown=help_text, show_table_of_contents=False)
-
-
-class Status(Static):
-    global is_paused, is_change
-    DEFAULT_CSS = """
-    Status{
-        layout: horizontal;
-        align: center middle;
-    }
-    """
-
-    def compose(self) -> ComposeResult:
-        global song, length
-        
-        length = MP3(song).info.length if mixer.music.get_busy() or is_paused else 300
-        yield ProgressBar(total=length, show_percentage=False, id="bar",)              
-
+            yield MarkdownViewer(markdown=help_text, show_table_of_contents=True)   
 
 class Sappy(App):
     global volume, q, p, is_paused, song, length
     COMMANDS = {songsProvider} | App.COMMANDS
-    DEFAULT_CSS = """
-    Control{
-        layout: horizontal;
-        align: center bottom;
-        content-align: center bottom;
-    }
-    """
 
     BINDINGS = [
         Binding(key="q", action="quit", description="Quit the app"),
@@ -251,7 +277,6 @@ class Sappy(App):
     def action_next(self) -> None:
         mixer.music.stop()
         mixer.music.unload()
-        is_change = True
 
     def action_prev(self) -> None:
         global q, p
@@ -267,17 +292,12 @@ class Sappy(App):
         self.dark = not self.dark
 
     def compose(self) -> ComposeResult:
-        self.title = "Sap.py"
-        self.sub_title = "~Avn3s"
-        yield Static("sidebar", id="sidebar")
-        yield Header(
-            show_clock=True,
-        )
-        yield Footer()
-        yield MarkdownViewer(song_list, show_table_of_contents=False, classes='songlist')
-#        yield Control()
-#        yield Status()
-
-
+        with Horizontal():
+            yield Sidebar()
+            with Vertical():
+                self.title = "Sap.py"
+                self.sub_title = "~Avn3s"
+                yield Header(show_clock=True,)
+                yield MarkdownViewer(song_list, show_table_of_contents=False, classes='songlist')    
 app = Sappy()
 app.run()
