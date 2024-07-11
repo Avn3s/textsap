@@ -14,7 +14,7 @@ from textual.widgets import (
     MarkdownViewer,
     Markdown
 )
-from textual.containers import Container, Vertical, Horizontal
+from textual.containers import Container, Vertical, Horizontal, Center
 from textual.command import Hit, Hits, Provider
 from textual import work
 from mutagen.mp3 import MP3
@@ -150,16 +150,23 @@ class Volumebar(Static):
     
     Volumebar {
         width: 30%;
-        height: 100%;
+        height: 10%;
         background: $panel;
         padding: 1 1;
-        align: center top;
+        align: center bottom;
     }
     
     """
     
     def compose(self)->ComposeResult:
-        yield Markdown()#start here
+        yield ProgressBar(total=100, id="volume_bar",)
+        self.query_one(ProgressBar).value=100
+    
+    def key_up(self):
+        self.query_one(ProgressBar).advance(5)
+    
+    def key_down(self):
+        self.query_one(ProgressBar).advance(-5)
         
 
 class HelpScreen(ModalScreen[None]):
@@ -178,7 +185,7 @@ class HelpScreen(ModalScreen[None]):
         background: $panel;
         align: center middle;
         padding: 2 4;
-        border: solid blue;
+        border: solid green;
     }
     
     """
@@ -293,11 +300,12 @@ class Sappy(App):
 
     def compose(self) -> ComposeResult:
         with Horizontal():
-            yield Sidebar()
             with Vertical():
                 self.title = "Sap.py"
                 self.sub_title = "~Avn3s"
                 yield Header(show_clock=True,)
-                yield MarkdownViewer(song_list, show_table_of_contents=False, classes='songlist')    
+                yield MarkdownViewer(song_list, show_table_of_contents=False, classes='songlist')
+                with Center():
+                    yield Volumebar()
 app = Sappy()
 app.run()
