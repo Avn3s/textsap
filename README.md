@@ -43,6 +43,11 @@ Then run the program
 cd textsap
 python sap.py
 ```
+To open the commandline, use the keybind "Ctrl+\\".<br>
+For further help, either use the keybind "h", or open the commandline and type:
+```
+help
+```
 
     
 ## Used By
