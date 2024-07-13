@@ -74,6 +74,7 @@ help_text="""
 | resume | Resumes the current song |
 | help | Opens this help screen|
 
+## About
 Check out the [GitHub](https://github.com/Avn3s/textsap) for more information.
 
 Gimme a ⭐ if you like it plz uwuwu <3 (@_@)<-Cute pleading face.
@@ -173,7 +174,7 @@ class HelpScreen(ModalScreen[None]):
 
 class Sappy(App):
     global volume, q, p, is_paused, song, length
-    COMMANDS = {songsProvider} | App.COMMANDS
+    App.COMMANDS = {songsProvider} | App.COMMANDS
 
     BINDINGS = [
         Binding(key="q", action="quit", description="Quit the app"),
