@@ -10,7 +10,7 @@ from textual.widgets import (
     Label,
     ProgressBar,
     MarkdownViewer,
-    Markdown
+    Markdown,
 )
 from textual.containers import Container, Vertical, Horizontal, Center
 from textual.command import Hit, Hits, Provider
@@ -34,19 +34,19 @@ is_running = True
 song = ""
 
 mixer.init()
-song_list="""\
+song_list = """\
 ## Installed Songs
 
 | No. | Name | Path |
 |-----|------|------|
 """
-songs=listdir("songs")
+songs = listdir("songs")
 
 for no, song in enumerate(songs, start=1):
-    if song!="◌󠇯.txt":
-        song_list+=f"|{no}|{song}|bob|\n"
+    if song != "◌󠇯.txt":
+        song_list += f"|{no}|{song}|bob|\n"
 
-help_text="""
+help_text = """
 
 # Help Screen
 
@@ -81,7 +81,6 @@ Enjoy.
 """
 
 
-
 ROWS = [
     ("No.", "Song"),
 ]
@@ -114,8 +113,8 @@ class songsProvider(Provider):
                     help=f"Queues {song[:-3:]}",
                     text="queue {song}",
                 )
-        help_score=matcher.match("help")
-        if help_score>0:
+        help_score = matcher.match("help")
+        if help_score > 0:
             yield Hit(
                 help_score,
                 matcher.highlight(query),
@@ -123,8 +122,8 @@ class songsProvider(Provider):
                 help="Shows help regarding commands and keybinds",
                 text="Shows help regarding commands and keybinds",
             )
-        pause_score=matcher.match("pause")
-        if pause_score>0:
+        pause_score = matcher.match("pause")
+        if pause_score > 0:
             yield Hit(
                 pause_score,
                 matcher.highlight(query),
@@ -132,8 +131,8 @@ class songsProvider(Provider):
                 help="Pauses the current song.",
                 text="Pauses the current song.",
             )
-        resume_score=matcher.match("resume")
-        if resume_score>0:
+        resume_score = matcher.match("resume")
+        if resume_score > 0:
             yield Hit(
                 resume_score,
                 matcher.highlight(query),
@@ -142,8 +141,6 @@ class songsProvider(Provider):
                 text="Resumes the current song.",
             )
 
-
-        
 
 class HelpScreen(ModalScreen[None]):
     BINDINGS = [Binding(key="escape", action="pop_screen")]
@@ -169,7 +166,8 @@ class HelpScreen(ModalScreen[None]):
     def compose(self) -> ComposeResult:
         global help_text
         with Container(id="help"):
-            yield MarkdownViewer(markdown=help_text, show_table_of_contents=True)   
+            yield MarkdownViewer(markdown=help_text, show_table_of_contents=True)
+
 
 class Sappy(App):
     global volume, q, p, is_paused, song, length
@@ -210,8 +208,7 @@ class Sappy(App):
             if not is_running:
                 quit()
             sleep(2)
-        
-    
+
     def on_mount(self) -> None:
         self.query_one("#volume").advance(100)
         self.songplay()
@@ -281,9 +278,15 @@ class Sappy(App):
             with Vertical():
                 self.title = "Sap.py"
                 self.sub_title = "~Avn3s"
-                yield Header(show_clock=True,)
-                yield MarkdownViewer(song_list, show_table_of_contents=False, classes='songlist')
+                yield Header(
+                    show_clock=True,
+                )
+                yield MarkdownViewer(
+                    song_list, show_table_of_contents=False, classes="songlist"
+                )
                 with Center():
                     yield ProgressBar(total=100, show_eta=False, id="volume")
+
+
 app = Sappy()
 app.run()
