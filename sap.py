@@ -8,16 +8,13 @@ from textual.widgets import (
     Footer,
     Static,
     Label,
-    DataTable,
     ProgressBar,
-    Button,
     MarkdownViewer,
     Markdown
 )
 from textual.containers import Container, Vertical, Horizontal, Center
 from textual.command import Hit, Hits, Provider
 from textual import work
-from mutagen.mp3 import MP3
 
 # importing stuff to play the music
 from pygame import mixer
@@ -145,28 +142,7 @@ class songsProvider(Provider):
                 text="Resumes the current song.",
             )
 
-class Volumebar(Static):
-    DEFAULT_CSS="""
-    
-    Volumebar {
-        width: 30%;
-        height: 10%;
-        background: $panel;
-        padding: 1 1;
-        align: center bottom;
-    }
-    
-    """
-    
-    def compose(self)->ComposeResult:
-        yield ProgressBar(total=100, id="volume_bar",)
-        self.query_one(ProgressBar).value=100
-    
-    def key_up(self):
-        self.query_one(ProgressBar).advance(5)
-    
-    def key_down(self):
-        self.query_one(ProgressBar).advance(-5)
+
         
 
 class HelpScreen(ModalScreen[None]):
@@ -237,6 +213,7 @@ class Sappy(App):
         
     
     def on_mount(self) -> None:
+        self.query_one("#volume").advance(100)
         self.songplay()
 
     def play_song(self, song: str) -> None:
@@ -253,12 +230,13 @@ class Sappy(App):
         self.notify(title="Added to queue", message=song[:-4:], severity="warning")
 
     def action_increase_volume(self) -> None:
+        self.query_one("#volume").advance(5)
         volume = mixer.music.get_volume()
         volume += 0.05
         mixer.music.set_volume(volume)
 
     def action_decrease_volume(self) -> None:
-        global volume
+        self.query_one("#volume").advance(-5)
         volume = mixer.music.get_volume()
         volume -= 0.05
         mixer.music.set_volume(volume)
@@ -306,6 +284,6 @@ class Sappy(App):
                 yield Header(show_clock=True,)
                 yield MarkdownViewer(song_list, show_table_of_contents=False, classes='songlist')
                 with Center():
-                    yield Volumebar()
+                    yield ProgressBar(total=100, show_eta=False, id="volume")
 app = Sappy()
 app.run()
