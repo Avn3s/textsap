@@ -22,10 +22,7 @@ from pygame import mixer
 # miscellaneous imports (is tht the right spelling tho?)
 from time import sleep
 from os import listdir
-from threading import Thread
 from functools import partial
-from keyboard import wait
-
 volume = 1
 q = []
 p = []
@@ -35,7 +32,7 @@ song = ""
 
 mixer.init()
 song_list = """\
-## Installed Songs
+# Downloaded Songs
 
 | No. | Name | Path |
 |-----|------|------|

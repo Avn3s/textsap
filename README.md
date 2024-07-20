@@ -28,7 +28,7 @@ Make sure python (version 3.10 or above) and pip are installed first.
 
 Install the dependencies using:
 ```bash
-pip install textual
+pip install textual==0.60.1
 pip install pygame
 ```
 
