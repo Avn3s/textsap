@@ -5,12 +5,12 @@ from textual.containers import ScrollableContainer, Container
 from textual.binding import Binding
 from textual.widgets import (
     Header,
-    Footer,
-    Static,
     Label,
     ProgressBar,
     MarkdownViewer,
     Markdown,
+    TabPane,
+    TabbedContent,
 )
 from textual.containers import Container, Vertical, Horizontal, Center
 from textual.command import Hit, Hits, Provider
@@ -31,7 +31,8 @@ is_running = True
 song = ""
 
 mixer.init()
-song_list = """\
+
+DOWNLOADS = """\
 # Downloaded Songs
 
 | No. | Name | Path |
@@ -41,10 +42,23 @@ songs = listdir("songs")
 
 for no, song in enumerate(songs, start=1):
     if song != "◌󠇯.txt":
-        song_list += f"|{no}|{song}|bob|\n"
+        DOWNLOADS += f"|{no}|{song}|bob|\n"
+
+QUEUE="""
+# Queued Songs
+
+| No. | Name | Path |
+|-----|------|------|
+"""
+for no, song in enumerate(q,start=1):
+    QUEUE+=f"|{no}|{song}|bob|\n"
+
+PLAYLISTS="""
+# Playlists
+
+"""
 
 help_text = """
-
 # Help Screen
 
 ## Keybinds
@@ -271,18 +285,25 @@ class Sappy(App):
         self.dark = not self.dark
 
     def compose(self) -> ComposeResult:
-        with Horizontal():
-            with Vertical():
-                self.title = "Sap.py"
-                self.sub_title = "~Avn3s"
-                yield Header(
-                    show_clock=True,
-                )
-                yield MarkdownViewer(
-                    song_list, show_table_of_contents=False, classes="songlist"
-                )
-                with Center():
-                    yield ProgressBar(total=100, show_eta=False, id="volume")
+        with Vertical():
+            self.title = "Sap.py"
+            self.sub_title = "~Avn3s"
+            yield Header(
+                show_clock=True,
+            )
+            with TabbedContent(initial="downloads"):
+                with TabPane("Downloads", id="downloads"):  # First tab
+                    yield Markdown(DOWNLOADS)  # Tab content
+                with TabPane("Queue", id="queue"):
+                    yield Markdown(QUEUE)
+                with TabPane("Playlists", id="playlists"):
+                    yield Markdown(PLAYLISTS)
+
+            yield MarkdownViewer(
+                DOWNLOADS, show_table_of_contents=False, classes="songlist"
+            )
+            with Center():
+                yield ProgressBar(total=100, show_eta=False, id="volume")
 
 
 app = Sappy()
