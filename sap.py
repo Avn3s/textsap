@@ -23,6 +23,7 @@ from pygame import mixer
 from time import sleep
 from os import listdir
 from functools import partial
+
 volume = 1
 q = []
 p = []
@@ -44,16 +45,16 @@ for no, song in enumerate(songs, start=1):
     if song != "◌󠇯.txt":
         DOWNLOADS += f"|{no}|{song}|bob|\n"
 
-QUEUE="""
+QUEUE = """
 # Queued Songs
 
 | No. | Name | Path |
 |-----|------|------|
 """
-for no, song in enumerate(q,start=1):
-    QUEUE+=f"|{no}|{song}|bob|\n"
+for no, song in enumerate(q, start=1):
+    QUEUE += f"|{no}|{song}|bob|\n"
 
-PLAYLISTS="""
+PLAYLISTS = """
 # Playlists
 
 """
