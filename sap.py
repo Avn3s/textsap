@@ -51,8 +51,7 @@ QUEUE = """
 | No. | Name | Path |
 |-----|------|------|
 """
-for no, song in enumerate(q, start=1):
-    QUEUE += f"|{no}|{song}|bob|\n"
+
 
 PLAYLISTS = """
 # Playlists
@@ -152,6 +151,16 @@ class songsProvider(Provider):
                 help="Resumes the current song.",
                 text="Resumes the current song.",
             )
+        for tab in ["Downloads", "Queue", "Playlists"]:
+            score = matcher.match(f"switch {tab}")
+            if score > 0:
+                yield Hit(
+                    score,
+                    matcher.highlight(query),
+                    partial(self.app.action_switch_tab, tab),
+                    help=f"Switches to the {tab} tab.",
+                    text=f"Switches to the {tab} tab.",
+                )
 
 
 class HelpScreen(ModalScreen[None]):
@@ -170,7 +179,7 @@ class HelpScreen(ModalScreen[None]):
         background: $panel;
         align: center middle;
         padding: 2 4;
-        border: solid green;
+        border: solid yellow;
     }
     
     """
@@ -206,7 +215,7 @@ class Sappy(App):
 
     @work(exclusive=True, thread=True)
     async def songplay(self) -> None:
-        global isPaused, volume, q, is_running, p, song
+        global isPaused, volume, q, is_running, p, song, QUEUE
         while True:
             if not mixer.music.get_busy() and not is_paused:
                 if len(q) != 0:
@@ -234,9 +243,11 @@ class Sappy(App):
         self.notify(title="Now Playing", message=song[:-4:])
 
     def queue_song(self, song: str) -> None:
+        global q, QUEUE
         mixer.music.set_volume(volume)
         q.append("./songs/" + song)
         self.notify(title="Added to queue", message=song[:-4:], severity="warning")
+        QUEUE += f"|{len(q)}|{song[:-4]}|bob|\n"
 
     def action_increase_volume(self) -> None:
         self.query_one("#volume").advance(5)
@@ -249,6 +260,12 @@ class Sappy(App):
         volume = mixer.music.get_volume()
         volume -= 0.05
         mixer.music.set_volume(volume)
+
+    def action_switch_tab(self, tab: str) -> None:
+        global QUEUE, q
+        self.query_one(TabbedContent).active = tab.lower()
+        for no, song in enumerate(q, start=1):
+            QUEUE += f"|{no}|{song}|bob|\n"
 
     def action_toggle_pause(self) -> None:
         global is_paused
