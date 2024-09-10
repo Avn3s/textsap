@@ -15,6 +15,9 @@ from textual.widgets import (
 from textual.containers import Container, Vertical, Horizontal, Center
 from textual.command import Hit, Hits, Provider
 from textual import work
+from textual.reactive import reactive
+from textual.message import Message
+
 
 # importing stuff to play the music
 from pygame import mixer
@@ -23,6 +26,7 @@ from pygame import mixer
 from time import sleep
 from os import listdir
 from functools import partial
+from pathlib import Path
 
 volume = 1
 q = []
@@ -33,30 +37,30 @@ song = ""
 
 mixer.init()
 
-DOWNLOADS = """\
+DOWNLOADS = ("""\
 # Downloaded Songs
 
 | No. | Name | Path |
 |-----|------|------|
-"""
+""")
 songs = listdir("songs")
 
 for no, song in enumerate(songs, start=1):
     if song != "◌󠇯.txt":
-        DOWNLOADS += f"|{no}|{song}|bob|\n"
+        DOWNLOADS += f"|{no}|{song}|{str(Path().absolute())+'\\songs\\{song}.mp3'}|\n"
 
-QUEUE = """
+QUEUE = ("""
 # Queued Songs
 
 | No. | Name | Path |
 |-----|------|------|
-"""
+""")
 
 
-PLAYLISTS = """
+PLAYLISTS = ("""
 # Playlists
 
-"""
+""")
 
 help_text = """
 # Help Screen
@@ -233,6 +237,15 @@ class Sappy(App):
     def on_mount(self) -> None:
         self.query_one("#volume").advance(100)
         self.songplay()
+    
+    
+    def on_key(self, event: Message) -> None:
+        if event.key == "left":
+            self.action_rewind()
+            event.prevent_default()
+        elif event.key == "right":
+            self.action_forward()
+            event.prevent_default()
 
     def play_song(self, song: str) -> None:
         q.clear()
