@@ -37,30 +37,30 @@ song = ""
 
 mixer.init()
 
-DOWNLOADS = ("""\
+DOWNLOADS = """\
 # Downloaded Songs
 
 | No. | Name | Path |
 |-----|------|------|
-""")
+"""
 songs = listdir("songs")
 
 for no, song in enumerate(songs, start=1):
     if song != "◌󠇯.txt":
         DOWNLOADS += f"|{no}|{song}|{str(Path().absolute())+'\\songs\\{song}.mp3'}|\n"
 
-QUEUE = ("""
+QUEUE = """
 # Queued Songs
 
 | No. | Name | Path |
 |-----|------|------|
-""")
+"""
 
 
-PLAYLISTS = ("""
+PLAYLISTS = """
 # Playlists
 
-""")
+"""
 
 help_text = """
 # Help Screen
@@ -102,6 +102,7 @@ ROWS = [
 for no, song in enumerate(listdir("songs"), start=1):
     ROWS.append(tuple([no, song]))
 
+
 class ReactiveMarkdown(Markdown):
     content = reactive("")
 
@@ -114,6 +115,7 @@ class ReactiveMarkdown(Markdown):
 
     def watch_content(self, new_content: str) -> None:
         self.update_content()
+
 
 class songsProvider(Provider):
     async def search(self, query: str) -> Hits:
@@ -245,7 +247,7 @@ class Sappy(App):
             if not is_running:
                 quit()
             sleep(2)
-    
+
     _queue_content = reactive(QUEUE)
     _playlists_content = reactive(PLAYLISTS)
 
@@ -270,8 +272,7 @@ class Sappy(App):
     def on_mount(self) -> None:
         self.query_one("#volume").advance(100)
         self.songplay()
-    
-    
+
     def on_key(self, event: Message) -> None:
         if event.key == "left":
             self.action_rewind()
@@ -293,17 +294,22 @@ class Sappy(App):
         mixer.music.set_volume(volume)
         q.append("./songs/" + song)
         self.notify(title="Added to queue", message=song[:-4:], severity="warning")
-        
+
         # Format the new queue item as a Markdown table row
-        new_queue_item = f"| {len(q)} | {song[:-4]} | {str(Path().absolute())}\\songs\\{song} |\n"
-        
+        new_queue_item = (
+            f"| {len(q)} | {song[:-4]} | {str(Path().absolute())}\\songs\\{song} |\n"
+        )
+
         # Update the QUEUE string
         if len(q) == 1:
             # If this is the first item, add the table header
-            QUEUE = "# Queued Songs\n\n| No. | Name | Path |\n|-----|------|------|\n" + new_queue_item
+            QUEUE = (
+                "# Queued Songs\n\n| No. | Name | Path |\n|-----|------|------|\n"
+                + new_queue_item
+            )
         else:
             QUEUE += new_queue_item
-        
+
         # Update the ReactiveMarkdown content
         self.query_one("#queue_content", ReactiveMarkdown).content = QUEUE
 
@@ -369,10 +375,12 @@ class Sappy(App):
                 with TabPane("Downloads", id="downloads"):
                     yield Markdown(DOWNLOADS)
                 with TabPane("Queue", id="queue"):
-                    yield ReactiveMarkdown(QUEUE,id="queue_content")
+                    yield ReactiveMarkdown(QUEUE, id="queue_content")
                 with TabPane("Playlists", id="playlists"):
-                    yield ReactiveMarkdown(PLAYLISTS,id="playlists_content")
-            yield MarkdownViewer(DOWNLOADS, show_table_of_contents=False, classes="songlist")
+                    yield ReactiveMarkdown(PLAYLISTS, id="playlists_content")
+            yield MarkdownViewer(
+                DOWNLOADS, show_table_of_contents=False, classes="songlist"
+            )
             with Center():
                 yield ProgressBar(total=100, show_eta=False, id="volume")
 
