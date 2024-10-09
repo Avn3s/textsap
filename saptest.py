@@ -1,11 +1,10 @@
 # importing ui components
 from textual.app import App, ComposeResult
 from textual.screen import ModalScreen
-from textual.containers import ScrollableContainer, Container
+from textual.containers import Container
 from textual.binding import Binding
 from textual.widgets import (
     Header,
-    Label,
     ProgressBar,
     MarkdownViewer,
     Markdown,
@@ -18,6 +17,8 @@ from textual import work
 from textual.reactive import reactive
 from textual.message import Message
 
+#backend
+from json import load, dump
 
 # importing stuff to play the music
 from pygame import mixer
@@ -101,6 +102,9 @@ ROWS = [
 ]
 for no, song in enumerate(listdir("songs"), start=1):
     ROWS.append(tuple([no, song]))
+
+def get_playlists():
+    ...
 
 
 class ReactiveMarkdown(Markdown):
@@ -273,14 +277,6 @@ class Sappy(App):
         self.query_one("#volume").advance(100)
         self.songplay()
 
-    def on_key(self, event: Message) -> None:
-        if event.key == "left":
-            self.action_rewind()
-            event.prevent_default()
-        elif event.key == "right":
-            self.action_forward()
-            event.prevent_default()
-
     def play_song(self, song: str) -> None:
         q.clear()
         mixer.music.set_volume(volume)
@@ -290,7 +286,7 @@ class Sappy(App):
         self.notify(title="Now Playing", message=song[:-4:])
 
     def queue_song(self, song: str) -> None:
-        global q, QUEUE
+        global q, QUEUE, volume
         mixer.music.set_volume(volume)
         q.append("./songs/" + song)
         self.notify(title="Added to queue", message=song[:-4:], severity="warning")
@@ -365,6 +361,7 @@ class Sappy(App):
 
     def action_toggle_dark(self) -> None:
         self.dark = not self.dark
+
 
     def compose(self) -> ComposeResult:
         with Vertical():
