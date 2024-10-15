@@ -1,11 +1,10 @@
 # importing ui components
 from textual.app import App, ComposeResult
 from textual.screen import ModalScreen
-from textual.containers import ScrollableContainer, Container
+from textual.containers import Container
 from textual.binding import Binding
 from textual.widgets import (
     Header,
-    Label,
     ProgressBar,
     MarkdownViewer,
     Markdown,
@@ -18,6 +17,8 @@ from textual import work
 from textual.reactive import reactive
 from textual.message import Message
 
+#backend
+from json import load, dump
 
 # importing stuff to play the music
 from pygame import mixer
@@ -37,30 +38,30 @@ song = ""
 
 mixer.init()
 
-DOWNLOADS = ("""\
+DOWNLOADS = """\
 # Downloaded Songs
 
 | No. | Name | Path |
 |-----|------|------|
-""")
+"""
 songs = listdir("songs")
 
 for no, song in enumerate(songs, start=1):
     if song != "◌󠇯.txt":
-        DOWNLOADS += f"|{no}|{song}|{str(Path().absolute())+'\\songs\\{song}.mp3'}|\n"
+        DOWNLOADS += f"|{no}|{song}|{str(Path().absolute())+f'\\songs\\{song}.mp3'}|\n"
 
-QUEUE = ("""
+QUEUE = """
 # Queued Songs
 
 | No. | Name | Path |
 |-----|------|------|
-""")
+"""
 
 
-PLAYLISTS = ("""
+PLAYLISTS = """
 # Playlists
 
-""")
+"""
 
 help_text = """
 # Help Screen
@@ -101,6 +102,34 @@ ROWS = [
 ]
 for no, song in enumerate(listdir("songs"), start=1):
     ROWS.append(tuple([no, song]))
+
+def get_playlists():
+    with open("playlists.json", "r") as file:
+        playlists = load(file)
+        return playlists
+
+def format_playlists_for_display():
+    playlists = get_playlists()
+    formatted_playlists = "# Playlists\n\n"
+    for playlist_name, songs in playlists.items():
+        formatted_playlists += f"**{playlist_name}**\n\n"
+        for song in songs:
+            formatted_playlists += f"- {song[:-4]}\n"
+        formatted_playlists += "\n"
+    return formatted_playlists
+
+class ReactiveMarkdown(Markdown):
+    content = reactive("")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.update_content()
+
+    def update_content(self) -> None:
+        self.update(self.content)
+
+    def watch_content(self, new_content: str) -> None:
+        self.update_content()
 
 
 class songsProvider(Provider):
@@ -165,6 +194,17 @@ class songsProvider(Provider):
                     help=f"Switches to the {tab} tab.",
                     text=f"Switches to the {tab} tab.",
                 )
+        playlists=get_playlists()
+        for playlist in playlists:
+            score=matcher.match(f"playlist queue {playlist}")
+            if score > 0:
+                yield Hit(
+                    score,
+                    matcher.highlight(query),
+                    partial(self.app.queue_playlist, playlist),
+                    help=f"Queues all songs in the {playlist} playlist.",
+                    text=f"Queues all songs in the {playlist} playlist.",
+                )
 
 
 class HelpScreen(ModalScreen[None]):
@@ -219,7 +259,7 @@ class Sappy(App):
 
     @work(exclusive=True, thread=True)
     async def songplay(self) -> None:
-        global isPaused, volume, q, is_running, p, song, QUEUE
+        global isPaused, q, is_running, p, song, QUEUE
         while True:
             if not mixer.music.get_busy() and not is_paused:
                 if len(q) != 0:
@@ -234,22 +274,35 @@ class Sappy(App):
                 quit()
             sleep(2)
 
+    _queue_content = reactive(QUEUE)
+    _playlists_content = reactive(PLAYLISTS)
+
+    @property
+    def queue_content(self):
+        return self._queue_content
+
+    @queue_content.setter
+    def queue_content(self, value):
+        self._queue_content = value
+        self.query_one("#queue_content", ReactiveMarkdown).content = value
+
+    @property
+    def playlists_content(self):
+        return self._playlists_content
+
+    @playlists_content.setter
+    def playlists_content(self, value):
+        self._playlists_content = value
+        self.query_one("#playlists_content", ReactiveMarkdown).content = value
+
     def on_mount(self) -> None:
         self.query_one("#volume").advance(100)
         self.songplay()
-    
-    def action_quit(self) -> None:
-        global is_running
-        is_running = False
-        exit()
-    def on_key(self, event: Message) -> None:
-        if event.key == "left":
-            self.action_rewind()
-            event.prevent_default()
-        elif event.key == "right":
-            self.action_forward()
-            event.prevent_default()
+        self.update_playlists_display()
 
+    def update_playlists_display(self) -> None:
+        playlists_content = format_playlists_for_display()
+        self.query_one("#playlists_content", ReactiveMarkdown).content = playlists_content
     def play_song(self, song: str) -> None:
         q.clear()
         # mixer.music.set_volume(volume)
@@ -259,17 +312,39 @@ class Sappy(App):
         self.notify(title="Now Playing", message=song[:-4:])
 
     def queue_song(self, song: str) -> None:
-        global q, QUEUE
+        global q, QUEUE, volume
         # mixer.music.set_volume(volume)
         q.append("./songs/" + song)
         self.notify(title="Added to queue", message=song[:-4:], severity="warning")
-        QUEUE += f"|{len(q)}|{song[:-4]}|bob|\n"
+        self.update_queue_display()
 
+    def update_queue_display(self) -> None:
+        global QUEUE, q
+        QUEUE = "# Queued Songs\n\n| No. | Name | Path |\n|-----|------|------|\n"
+        for index, song in enumerate(q, start=1):
+            song_name = song.split('/')[-1][:-4]  # Remove path and file extension
+            QUEUE += f"| {index} | {song_name} | {song} |\n"
+        self.query_one("#queue_content", ReactiveMarkdown).content = QUEUE
     def action_increase_volume(self) -> None:
         self.query_one("#volume").advance(5)
         volume = mixer.music.get_volume()
         volume += 0.05
         mixer.music.set_volume(volume)
+    
+    def queue_playlist(self, playlist_name) -> None:
+        global QUEUE, q
+        playlists = get_playlists()
+        
+        for song in playlists[playlist_name]:
+            q.append("./songs/" + song)
+        
+        QUEUE = "# Queued Songs\n\n| No. | Name | Path |\n|-----|------|------|\n"
+        for index, song in enumerate(q, start=1):
+            song_name = song.split('/')[-1][:-4]  # Remove path and file extension
+            QUEUE += f"| {index} | {song_name} | {song} |\n"
+        
+        self.query_one("#queue_content", ReactiveMarkdown).content = QUEUE
+        self.notify(title="Playlist added to queue", message=playlist_name, severity="warning")
 
     def action_decrease_volume(self) -> None:
         self.query_one("#volume").advance(-5)
@@ -318,21 +393,19 @@ class Sappy(App):
     def action_toggle_dark(self) -> None:
         self.dark = not self.dark
 
+
     def compose(self) -> ComposeResult:
         with Vertical():
             self.title = "Sap.py"
             self.sub_title = "~Avn3s"
-            yield Header(
-                show_clock=True,
-            )
+            yield Header(show_clock=True)
             with TabbedContent(initial="downloads"):
-                with TabPane("Downloads", id="downloads"):  # First tab
-                    yield Markdown(DOWNLOADS)  # Tab content
+                with TabPane("Downloads", id="downloads"):
+                    yield Markdown(DOWNLOADS)
                 with TabPane("Queue", id="queue"):
-                    yield Markdown(QUEUE)
+                    yield ReactiveMarkdown(QUEUE, id="queue_content")
                 with TabPane("Playlists", id="playlists"):
-                    yield Markdown(PLAYLISTS)
-
+                    yield ReactiveMarkdown(PLAYLISTS, id="playlists_content")
             yield MarkdownViewer(
                 DOWNLOADS, show_table_of_contents=False, classes="songlist"
             )
