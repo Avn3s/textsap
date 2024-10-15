@@ -227,7 +227,7 @@ class Sappy(App):
                     song = q.pop(0)
                     p.append(song)
                     mixer.music.load(song)
-                    mixer.music.set_volume(volume)
+                    # mixer.music.set_volume(volume)
                     mixer.music.play()
                     self.notify(title="Now Playing", message=song[8:-4:])
             if not is_running:
@@ -238,7 +238,10 @@ class Sappy(App):
         self.query_one("#volume").advance(100)
         self.songplay()
     
-    
+    def action_quit(self) -> None:
+        global is_running
+        is_running = False
+        exit()
     def on_key(self, event: Message) -> None:
         if event.key == "left":
             self.action_rewind()
@@ -249,7 +252,7 @@ class Sappy(App):
 
     def play_song(self, song: str) -> None:
         q.clear()
-        mixer.music.set_volume(volume)
+        # mixer.music.set_volume(volume)
         mixer.music.unload()
         mixer.music.load("./songs/" + song)
         mixer.music.play()
@@ -257,7 +260,7 @@ class Sappy(App):
 
     def queue_song(self, song: str) -> None:
         global q, QUEUE
-        mixer.music.set_volume(volume)
+        # mixer.music.set_volume(volume)
         q.append("./songs/" + song)
         self.notify(title="Added to queue", message=song[:-4:], severity="warning")
         QUEUE += f"|{len(q)}|{song[:-4]}|bob|\n"
