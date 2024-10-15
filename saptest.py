@@ -259,7 +259,7 @@ class Sappy(App):
 
     @work(exclusive=True, thread=True)
     async def songplay(self) -> None:
-        global isPaused, volume, q, is_running, p, song, QUEUE
+        global isPaused, q, is_running, p, song, QUEUE
         while True:
             if not mixer.music.get_busy() and not is_paused:
                 if len(q) != 0:
@@ -267,7 +267,7 @@ class Sappy(App):
                     song = q.pop(0)
                     p.append(song)
                     mixer.music.load(song)
-                    mixer.music.set_volume(volume)
+                    # mixer.music.set_volume(volume)
                     mixer.music.play()
                     self.notify(title="Now Playing", message=song[8:-4:])
             if not is_running:
@@ -305,7 +305,7 @@ class Sappy(App):
         self.query_one("#playlists_content", ReactiveMarkdown).content = playlists_content
     def play_song(self, song: str) -> None:
         q.clear()
-        mixer.music.set_volume(volume)
+        # mixer.music.set_volume(volume)
         mixer.music.unload()
         mixer.music.load("./songs/" + song)
         mixer.music.play()
@@ -313,7 +313,7 @@ class Sappy(App):
 
     def queue_song(self, song: str) -> None:
         global q, QUEUE, volume
-        mixer.music.set_volume(volume)
+        # mixer.music.set_volume(volume)
         q.append("./songs/" + song)
         self.notify(title="Added to queue", message=song[:-4:], severity="warning")
         self.update_queue_display()
