@@ -95,6 +95,7 @@ help_text = """
 | help | Opens this help screen|
 | playlist queue {playlist_name} | Queues the playlist |
 | switch {tab} | Switches to the mentioned tab |
+| clear queue | Clears the queue |
 
 ## About
 Check out the [GitHub](https://github.com/Avn3s/textsap) for more information.
@@ -212,6 +213,15 @@ class songsProvider(Provider):
                     help=f"Queues all songs in the {playlist} playlist.",
                     text=f"Queues all songs in the {playlist} playlist.",
                 )
+        score=matcher.match("clear queue")
+        if score>0:
+            yield Hit(
+                score,
+                matcher.highlight(query),
+                partial(self.app.action_clear_queue),
+                help="Clears the queue.",
+                text="Clears the queue.",
+            )
 
 class HelpScreen(ModalScreen[None]):
     BINDINGS = [Binding(key="escape", action="pop_screen")]
@@ -406,6 +416,14 @@ class Sappy(App):
             
     def action_help(self) -> None:
         self.push_screen(HelpScreen())
+    
+    def action_clear_queue(self) -> None:
+        global q, QUEUE
+        q.clear()
+        mixer.music.stop()
+        mixer.music.unload()
+        self.update_queue_display()
+        self.notify(title="Queue Cleared", message="All songs have been removed from the queue", severity="information")
 
     def action_toggle_dark(self) -> None:
         self.dark = not self.dark
