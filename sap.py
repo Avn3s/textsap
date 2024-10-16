@@ -10,6 +10,11 @@ from textual.widgets import (
     Markdown,
     TabPane,
     TabbedContent,
+    Button,
+    Input,
+    Label,
+    ListView,
+    ListItem,
 )
 from textual.containers import Container, Vertical, Horizontal, Center
 from textual.command import Hit, Hits, Provider
@@ -88,6 +93,8 @@ help_text = """
 | pause | Pauses the current song |
 | resume | Resumes the current song |
 | help | Opens this help screen|
+| playlist queue {playlist_name} | Queues the playlist |
+| switch {tab} | Switches to the mentioned tab |
 
 ## About
 Check out the [GitHub](https://github.com/Avn3s/textsap) for more information.
@@ -206,7 +213,6 @@ class songsProvider(Provider):
                     text=f"Queues all songs in the {playlist} playlist.",
                 )
 
-
 class HelpScreen(ModalScreen[None]):
     BINDINGS = [Binding(key="escape", action="pop_screen")]
 
@@ -233,7 +239,6 @@ class HelpScreen(ModalScreen[None]):
         with Container(id="help"):
             yield MarkdownViewer(markdown=help_text, show_table_of_contents=True)
 
-
 class Sappy(App):
     global volume, q, p, is_paused, song, length
     App.COMMANDS = {songsProvider} | App.COMMANDS
@@ -253,6 +258,7 @@ class Sappy(App):
         Binding(key=">", action="next", description="Next song"),
         Binding(key="<", action="prev", description="Previous song"),
         Binding(key="h", action="help", description="Help"),
+        Binding(key="?", action="help", description="Help"),
         Binding(key="left", action="rewind", description="rewind"),
         Binding(key="right", action="forward", description="forward"),
     ]
@@ -263,13 +269,16 @@ class Sappy(App):
         while True:
             if not mixer.music.get_busy() and not is_paused:
                 if len(q) != 0:
-                    mixer.music.unload()
-                    song = q.pop(0)
-                    p.append(song)
-                    mixer.music.load(song)
-                    # mixer.music.set_volume(volume)
-                    mixer.music.play()
-                    self.notify(title="Now Playing", message=song[8:-4:])
+                    try:
+                        mixer.music.unload()
+                        song = q.pop(0)
+                        p.append(song)
+                        mixer.music.load(song)
+                        # mixer.music.set_volume(volume)
+                        mixer.music.play()
+                        self.notify(title="Now Playing", message=song[8:-4:])
+                    except:
+                        pass
             if not is_running:
                 quit()
             sleep(2)
@@ -299,8 +308,13 @@ class Sappy(App):
         self.query_one("#volume").advance(100)
         self.songplay()
         self.update_playlists_display()
+    
+    def action_quit(self) -> None:
+        global is_running
+        is_running = False
+        exit()
 
-    def update_playlists_display(self) -> None:
+    def update_playlists_display(self):
         playlists_content = format_playlists_for_display()
         self.query_one("#playlists_content", ReactiveMarkdown).content = playlists_content
     def play_song(self, song: str) -> None:
@@ -382,11 +396,14 @@ class Sappy(App):
 
     def action_prev(self) -> None:
         global q, p
-        q.insert(0, p.pop())
-        q.insert(0, p.pop())
-        mixer.music.stop()
-        mixer.music.unload()
-
+        try:    
+            q.insert(0, p.pop())
+            q.insert(0, p.pop())
+            mixer.music.stop()
+            mixer.music.unload()
+        except:
+            self.notify(title="No previous songs", message="There are no previous songs in the queue", severity="error")
+            
     def action_help(self) -> None:
         self.push_screen(HelpScreen())
 
