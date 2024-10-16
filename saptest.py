@@ -246,96 +246,6 @@ class HelpScreen(ModalScreen[None]):
         global help_text
         with Container(id="help"):
             yield MarkdownViewer(markdown=help_text, show_table_of_contents=True)
-class Playlist_creator(ModalScreen[None]):
-    BINDINGS = [
-        Binding(key="escape", action="pop_screen"),
-        Binding(key="tab", action="focus_next"),
-        Binding(key="shift+tab", action="focus_previous"),
-        Binding(key="enter", action="select_item"),
-        Binding(key="c", action="create_playlist"),
-    ]
-    
-    DEFAULT_CSS = """
-    Playlist_creator {
-        align: center middle;
-    }
-    #playlist_creator {
-        width: auto;
-        max-width: 70%;
-        height: auto;
-        max-height: 80%;
-        background: $panel;
-        align: center middle;
-        padding: 2 4;
-        border: solid yellow;
-    }
-    #song_list {
-        height: 1fr;
-        border: solid $accent;
-    }
-    #buttons {
-        width: 100%;
-        height: auto;
-        align-horizontal: center;
-    }
-    """
-
-    def compose(self) -> ComposeResult:
-        with Container(id="playlist_creator"):
-            yield Input(placeholder="Enter playlist name", id="playlist_name")
-            yield Label("Use arrow keys to navigate, Enter to select/deselect, 'c' to create")
-            yield ListView(id="song_list")
-            with Horizontal(id="buttons"):
-                yield Button("Create Playlist", variant="primary", id="create_button")
-                yield Button("Cancel", variant="error", id="cancel_button")
-    def on_mount(self):
-        self.set_focus(self.query_one("#playlist_name"))
-        song_list = self.query_one("#song_list")
-        for song in listdir("songs"):
-            if song.endswith(".mp3"):
-                song_list.append(ListItem(Label(song[:-4])))
-
-    def action_focus_next(self) -> None:
-        order = ["#playlist_name", "#song_list", "#create_button", "#cancel_button"]
-        current = self.screen.focused
-        current_index = order.index(f"#{current.id}")
-        next_index = (current_index + 1) % len(order)
-        self.set_focus(self.query_one(order[next_index]))
-
-    def action_focus_previous(self) -> None:
-        order = ["#playlist_name", "#song_list", "#create_button", "#cancel_button"]
-        current = self.screen.focused
-        current_index = order.index(f"#{current.id}")
-        prev_index = (current_index - 1) % len(order)
-        self.set_focus(self.query_one(order[prev_index]))
-
-    def action_select_item(self) -> None:
-        focused = self.screen.focused
-        if isinstance(focused, ListView):
-            focused.action_toggle_selected()
-        elif isinstance(focused, Button):
-            self.on_button_pressed(Button.Pressed(focused))
-
-    def action_create_playlist(self) -> None:
-        self.on_button_pressed(Button.Pressed(self.query_one("#create_button")))
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "create_button":
-            playlist_name = self.query_one("#playlist_name").value
-            song_list = self.query_one("#song_list")
-            selected_songs = [item.label.plain for item in song_list.query(".list-view--item-selected")]
-            if playlist_name and selected_songs:
-                self.create_new_playlist(playlist_name, selected_songs)
-                self.app.call_after_refresh(self.app.update_playlists_display)
-                self.app.pop_screen()
-        elif event.button.id == "cancel_button":
-            self.app.pop_screen()
-    def create_new_playlist(self, name: str, songs: list[str]):
-        playlists = get_playlists()
-        playlists[name] = [song + ".mp3" for song in songs]
-        with open("playlists.json", "w") as file:
-            dump(playlists, file)
-        self.app.notify(f"Playlist '{name}' created successfully", severity="success")
 
 class Sappy(App):
     global volume, q, p, is_paused, song, length
@@ -402,6 +312,11 @@ class Sappy(App):
         self.query_one("#volume").advance(100)
         self.songplay()
         self.update_playlists_display()
+    
+    def action_quit(self) -> None:
+        global is_running
+        is_running = False
+        exit()
     
     def create_playlist(self) -> None:
         self.push_screen(Playlist_creator())
