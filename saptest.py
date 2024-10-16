@@ -276,13 +276,16 @@ class Sappy(App):
         while True:
             if not mixer.music.get_busy() and not is_paused:
                 if len(q) != 0:
-                    mixer.music.unload()
-                    song = q.pop(0)
-                    p.append(song)
-                    mixer.music.load(song)
-                    # mixer.music.set_volume(volume)
-                    mixer.music.play()
-                    self.notify(title="Now Playing", message=song[8:-4:])
+                    try:
+                        mixer.music.unload()
+                        song = q.pop(0)
+                        p.append(song)
+                        mixer.music.load(song)
+                        # mixer.music.set_volume(volume)
+                        mixer.music.play()
+                        self.notify(title="Now Playing", message=song[8:-4:])
+                    except:
+                        pass
             if not is_running:
                 quit()
             sleep(2)
@@ -317,9 +320,6 @@ class Sappy(App):
         global is_running
         is_running = False
         exit()
-    
-    def create_playlist(self) -> None:
-        self.push_screen(Playlist_creator())
 
     def update_playlists_display(self):
         playlists_content = format_playlists_for_display()
@@ -403,11 +403,14 @@ class Sappy(App):
 
     def action_prev(self) -> None:
         global q, p
-        q.insert(0, p.pop())
-        q.insert(0, p.pop())
-        mixer.music.stop()
-        mixer.music.unload()
-
+        try:    
+            q.insert(0, p.pop())
+            q.insert(0, p.pop())
+            mixer.music.stop()
+            mixer.music.unload()
+        except:
+            self.notify(title="No previous songs", message="There are no previous songs in the queue", severity="error")
+            
     def action_help(self) -> None:
         self.push_screen(HelpScreen())
 
