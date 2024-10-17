@@ -10,20 +10,15 @@ from textual.widgets import (
     Markdown,
     TabPane,
     TabbedContent,
-    Button,
-    Input,
-    Label,
-    ListView,
-    ListItem,
 )
-from textual.containers import Container, Vertical, Horizontal, Center
+from textual.containers import Container, Vertical, Center
 from textual.command import Hit, Hits, Provider
 from textual import work
 from textual.reactive import reactive
 from textual.message import Message
 
-#backend
-from json import load, dump
+# backend
+from json import load
 
 # importing stuff to play the music
 from pygame import mixer
@@ -111,10 +106,12 @@ ROWS = [
 for no, song in enumerate(listdir("songs"), start=1):
     ROWS.append(tuple([no, song]))
 
+
 def get_playlists():
     with open("playlists.json", "r") as file:
         playlists = load(file)
         return playlists
+
 
 def format_playlists_for_display():
     playlists = get_playlists()
@@ -125,6 +122,7 @@ def format_playlists_for_display():
             formatted_playlists += f"- {song[:-4]}\n"
         formatted_playlists += "\n"
     return formatted_playlists
+
 
 class ReactiveMarkdown(Markdown):
     content = reactive("")
@@ -202,9 +200,9 @@ class songsProvider(Provider):
                     help=f"Switches to the {tab} tab.",
                     text=f"Switches to the {tab} tab.",
                 )
-        playlists=get_playlists()
+        playlists = get_playlists()
         for playlist in playlists:
-            score=matcher.match(f"playlist queue {playlist}")
+            score = matcher.match(f"playlist queue {playlist}")
             if score > 0:
                 yield Hit(
                     score,
@@ -213,8 +211,8 @@ class songsProvider(Provider):
                     help=f"Queues all songs in the {playlist} playlist.",
                     text=f"Queues all songs in the {playlist} playlist.",
                 )
-        score=matcher.match("clear queue")
-        if score>0:
+        score = matcher.match("clear queue")
+        if score > 0:
             yield Hit(
                 score,
                 matcher.highlight(query),
@@ -222,6 +220,7 @@ class songsProvider(Provider):
                 help="Clears the queue.",
                 text="Clears the queue.",
             )
+
 
 class HelpScreen(ModalScreen[None]):
     BINDINGS = [Binding(key="escape", action="pop_screen")]
@@ -248,6 +247,7 @@ class HelpScreen(ModalScreen[None]):
         global help_text
         with Container(id="help"):
             yield MarkdownViewer(markdown=help_text, show_table_of_contents=True)
+
 
 class Sappy(App):
     global volume, q, p, is_paused, song, length
@@ -318,7 +318,7 @@ class Sappy(App):
         self.query_one("#volume").advance(100)
         self.songplay()
         self.update_playlists_display()
-    
+
     def action_quit(self) -> None:
         global is_running
         is_running = False
@@ -326,7 +326,10 @@ class Sappy(App):
 
     def update_playlists_display(self):
         playlists_content = format_playlists_for_display()
-        self.query_one("#playlists_content", ReactiveMarkdown).content = playlists_content
+        self.query_one(
+            "#playlists_content", ReactiveMarkdown
+        ).content = playlists_content
+
     def play_song(self, song: str) -> None:
         q.clear()
         # mixer.music.set_volume(volume)
@@ -346,29 +349,32 @@ class Sappy(App):
         global QUEUE, q
         QUEUE = "# Queued Songs\n\n| No. | Name | Path |\n|-----|------|------|\n"
         for index, song in enumerate(q, start=1):
-            song_name = song.split('/')[-1][:-4]  # Remove path and file extension
+            song_name = song.split("/")[-1][:-4]  # Remove path and file extension
             QUEUE += f"| {index} | {song_name} | {song} |\n"
         self.query_one("#queue_content", ReactiveMarkdown).content = QUEUE
+
     def action_increase_volume(self) -> None:
         self.query_one("#volume").advance(5)
         volume = mixer.music.get_volume()
         volume += 0.05
         mixer.music.set_volume(volume)
-    
+
     def queue_playlist(self, playlist_name) -> None:
         global QUEUE, q
         playlists = get_playlists()
-        
+
         for song in playlists[playlist_name]:
             q.append("./songs/" + song)
-        
+
         QUEUE = "# Queued Songs\n\n| No. | Name | Path |\n|-----|------|------|\n"
         for index, song in enumerate(q, start=1):
-            song_name = song.split('/')[-1][:-4]  # Remove path and file extension
+            song_name = song.split("/")[-1][:-4]  # Remove path and file extension
             QUEUE += f"| {index} | {song_name} | {song} |\n"
-        
+
         self.query_one("#queue_content", ReactiveMarkdown).content = QUEUE
-        self.notify(title="Playlist added to queue", message=playlist_name, severity="warning")
+        self.notify(
+            title="Playlist added to queue", message=playlist_name, severity="warning"
+        )
 
     def action_decrease_volume(self) -> None:
         self.query_one("#volume").advance(-5)
@@ -406,28 +412,35 @@ class Sappy(App):
 
     def action_prev(self) -> None:
         global q, p
-        try:    
+        try:
             q.insert(0, p.pop())
             q.insert(0, p.pop())
             mixer.music.stop()
             mixer.music.unload()
         except:
-            self.notify(title="No previous songs", message="There are no previous songs in the queue", severity="error")
-            
+            self.notify(
+                title="No previous songs",
+                message="There are no previous songs in the queue",
+                severity="error",
+            )
+
     def action_help(self) -> None:
         self.push_screen(HelpScreen())
-    
+
     def action_clear_queue(self) -> None:
         global q, QUEUE
         q.clear()
         mixer.music.stop()
         mixer.music.unload()
         self.update_queue_display()
-        self.notify(title="Queue Cleared", message="All songs have been removed from the queue", severity="information")
+        self.notify(
+            title="Queue Cleared",
+            message="All songs have been removed from the queue",
+            severity="information",
+        )
 
     def action_toggle_dark(self) -> None:
         self.dark = not self.dark
-
 
     def compose(self) -> ComposeResult:
         with Vertical():
